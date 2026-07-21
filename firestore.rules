@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// FastFit — lock every user's document to their own anonymous UID.
+// Paste these into: Firebase Console → Firestore Database → Rules → Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

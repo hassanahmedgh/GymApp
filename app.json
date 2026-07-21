@@ -32,9 +32,6 @@
       "themeColor": "#0C0F14",
       "backgroundColor": "#0C0F14",
       "description": "16:8 fasting, Push/Pull/Legs workouts & body tracking"
-    },
-    "experiments": {
-      "baseUrl": "/GymApp"
     }
   }
 }

@@ -2,21 +2,21 @@
   "name": "FastFit",
   "short_name": "FastFit",
   "description": "16:8 fasting, Push/Pull/Legs workouts & body tracking",
-  "start_url": "/GymApp/",
-  "scope": "/GymApp/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0C0F14",
   "theme_color": "#0C0F14",
   "icons": [
     {
-      "src": "/GymApp/icon.png",
+      "src": "/icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/GymApp/icon.png",
+      "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

@@ -9,7 +9,9 @@ import path from 'node:path';
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const DIST = path.join(ROOT, 'dist');
 const DOCS = path.join(ROOT, 'docs');
-const BASE = '/GymApp';
+// Served at the root of a custom domain (fastfit.hassanahmed.site), so no path prefix.
+const BASE = '';
+const CUSTOM_DOMAIN = 'fastfit.hassanahmed.site';
 
 const indexPath = path.join(DIST, 'index.html');
 let html = fs.readFileSync(indexPath, 'utf8');
@@ -98,4 +100,7 @@ fs.writeFileSync(path.join(DIST, '.nojekyll'), '');
 fs.rmSync(DOCS, { recursive: true, force: true });
 fs.cpSync(DIST, DOCS, { recursive: true });
 
-console.log('PWA post-build complete → docs/ ready for GitHub Pages');
+// 8) custom domain for GitHub Pages (must live in the published folder)
+fs.writeFileSync(path.join(DOCS, 'CNAME'), `${CUSTOM_DOMAIN}\n`);
+
+console.log(`PWA post-build complete → docs/ ready for GitHub Pages (${CUSTOM_DOMAIN})`);

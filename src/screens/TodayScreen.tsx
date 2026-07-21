@@ -2,16 +2,22 @@ import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTracker } from '../state/TrackerContext';
+import { useAuth } from '../state/AuthContext';
 import { SCHEDULE, GLASS_ML } from '../data';
 import { todayISO } from '../lib/dates';
-import { colors, spacing, radius, font, tint } from '../theme';
+import { colors, spacing, radius, font, tint, categoryColor } from '../theme';
 import { Card, SectionHeader, ProgressBar } from '../components/ui';
 import { Ring } from '../components/Ring';
-import { ScheduleRow } from '../components/ScheduleRow';
 
 export function TodayScreen() {
   const { state, toggleTask, addWater, resetWater } = useTracker();
+  const { user } = useAuth();
   const today = todayISO();
+
+  const name = useMemo(() => {
+    const raw = (user?.displayName || user?.email?.split('@')[0] || 'Athlete').split(' ')[0];
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }, [user]);
 
   const checks = state.dayChecks[today] ?? {};
   const done = useMemo(
@@ -30,6 +36,12 @@ export function TodayScreen() {
 
   return (
     <View>
+      {/* Welcome */}
+      <View style={styles.welcome}>
+        <Text style={styles.welcomeHi}>Welcome back,</Text>
+        <Text style={styles.welcomeName}>{name} 👋</Text>
+      </View>
+
       {/* Daily completion summary */}
       <Card style={styles.summary}>
         <Ring progress={progress} color={progress === 1 ? colors.success : colors.primary}>
@@ -47,12 +59,7 @@ export function TodayScreen() {
               ? 'Every task done. Great discipline today.'
               : `${total - done} task${total - done === 1 ? '' : 's'} left. Stay locked in.`}
           </Text>
-          <View style={styles.summaryBar}>
-            <ProgressBar
-              value={progress}
-              color={progress === 1 ? colors.success : colors.primary}
-            />
-          </View>
+          <ProgressBar value={progress} color={progress === 1 ? colors.success : colors.primary} />
         </View>
       </Card>
 
@@ -105,21 +112,57 @@ export function TodayScreen() {
         </View>
       </Card>
 
-      {/* Schedule */}
+      {/* Daily plan — table */}
       <SectionHeader title="Daily plan" />
-      {SCHEDULE.map((item) => (
-        <ScheduleRow
-          key={item.id}
-          item={item}
-          done={!!checks[item.id]}
-          onToggle={() => toggleTask(today, item.id)}
-        />
-      ))}
+      <Card style={styles.tableCard}>
+        <View style={styles.tHead}>
+          <Text style={[styles.tHeadCell, styles.tTime]}>TIME</Text>
+          <Text style={[styles.tHeadCell, styles.tTask]}>TASK</Text>
+          <Text style={[styles.tHeadCell, styles.tDone]}>DONE</Text>
+        </View>
+
+        {SCHEDULE.map((item, idx) => {
+          const isDone = !!checks[item.id];
+          const accent = categoryColor[item.category];
+          return (
+            <Pressable
+              key={item.id}
+              onPress={() => toggleTask(today, item.id)}
+              style={({ pressed }) => [styles.tRow, idx > 0 && styles.tRowBorder, pressed && styles.pressed]}
+            >
+              <View style={styles.tTime}>
+                <Text style={styles.timeText}>{item.time}</Text>
+                <Text style={[styles.catText, { color: accent }]}>{item.category}</Text>
+              </View>
+              <View style={styles.tTask}>
+                <Text style={[styles.taskTitle, isDone && styles.taskDone]}>{item.title}</Text>
+                <Text style={styles.taskDetail}>{item.detail}</Text>
+              </View>
+              <View style={styles.tDone}>
+                <View
+                  style={[
+                    styles.check,
+                    isDone
+                      ? { backgroundColor: colors.success, borderColor: colors.success }
+                      : { borderColor: colors.borderStrong },
+                  ]}
+                >
+                  {isDone ? <Ionicons name="checkmark" size={16} color={colors.white} /> : null}
+                </View>
+              </View>
+            </Pressable>
+          );
+        })}
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  welcome: { marginBottom: spacing.lg },
+  welcomeHi: { color: colors.textMuted, fontSize: font.small, fontWeight: '600' },
+  welcomeName: { color: colors.text, fontSize: 26, fontWeight: '900', marginTop: 2 },
+
   summary: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -131,7 +174,6 @@ const styles = StyleSheet.create({
   summaryText: { flex: 1 },
   summaryTitle: { color: colors.text, fontSize: font.h3, fontWeight: '800', marginBottom: 4 },
   summaryDesc: { color: colors.textMuted, fontSize: font.small, lineHeight: 19, marginBottom: 12 },
-  summaryBar: {},
 
   water: { marginBottom: spacing.md },
   waterTop: {
@@ -171,4 +213,38 @@ const styles = StyleSheet.create({
   waterBtnSolid: { backgroundColor: colors.primary },
   waterBtnSolidText: { color: colors.white, fontWeight: '700', fontSize: font.body },
   pressed: { opacity: 0.7 },
+
+  tableCard: { padding: 0, overflow: 'hidden' },
+  tHead: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+    backgroundColor: colors.bgElevated,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tHeadCell: { color: colors.textFaint, fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
+  tRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    alignItems: 'flex-start',
+  },
+  tRowBorder: { borderTopWidth: 1, borderTopColor: colors.border },
+  tTime: { width: 66, paddingRight: spacing.sm },
+  tTask: { flex: 1, paddingRight: spacing.sm },
+  tDone: { width: 40, alignItems: 'flex-end' },
+  timeText: { color: colors.text, fontSize: font.tiny + 1, fontWeight: '800' },
+  catText: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase', marginTop: 3, letterSpacing: 0.4 },
+  taskTitle: { color: colors.text, fontSize: font.body, fontWeight: '700', marginBottom: 2 },
+  taskDone: { textDecorationLine: 'line-through', color: colors.textMuted },
+  taskDetail: { color: colors.textMuted, fontSize: font.small, lineHeight: 18 },
+  check: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

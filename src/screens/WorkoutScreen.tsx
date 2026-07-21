@@ -202,11 +202,10 @@ function ExerciseBlock({
   exercise: Exercise;
   accent: string;
 }) {
-  const { state, toggleSet, setSetReps, setSetWeight, addSet, removeSet } = useTracker();
+  const { state, toggleSet, setSetReps, addSet, removeSet } = useTracker();
   const { start } = useRestTimer();
   const sets = readSets(state.workoutLog, date, exercise.id, exercise.targetSets);
   const doneCount = sets.filter((s) => s.done).length;
-  const unit = state.units.weight;
 
   function onToggle(index: number, currentlyDone: boolean) {
     toggleSet(date, exercise.id, index, exercise.targetSets);
@@ -225,9 +224,9 @@ function ExerciseBlock({
       {/* column labels */}
       <View style={styles.colHead}>
         <Text style={[styles.colLabel, styles.colSet]}>SET</Text>
-        <Text style={[styles.colLabel, styles.colField]}>REPS</Text>
-        <Text style={[styles.colLabel, styles.colField]}>{unit.toUpperCase()}</Text>
-        <Text style={[styles.colLabel, styles.colCheck]}>✓</Text>
+        <Text style={[styles.colLabel, styles.colReps]}>REPS</Text>
+        <View style={styles.colSpacer} />
+        <Text style={[styles.colLabel, styles.colCheck]}>DONE</Text>
       </View>
 
       {sets.map((s, i) => (
@@ -239,21 +238,10 @@ function ExerciseBlock({
             placeholder={exercise.targetReps}
             placeholderTextColor={colors.textFaint}
             keyboardType="number-pad"
-            style={[styles.input, styles.colField]}
+            style={styles.repsInput}
           />
-          <TextInput
-            value={s.weight}
-            onChangeText={(v) => setSetWeight(date, exercise.id, i, v, exercise.targetSets)}
-            placeholder="—"
-            placeholderTextColor={colors.textFaint}
-            keyboardType="decimal-pad"
-            style={[styles.input, styles.colField]}
-          />
-          <Pressable
-            onPress={() => onToggle(i, s.done)}
-            style={[styles.colCheck, styles.checkWrap]}
-            hitSlop={6}
-          >
+          <View style={styles.colSpacer} />
+          <Pressable onPress={() => onToggle(i, s.done)} style={styles.checkWrap} hitSlop={8}>
             <View
               style={[
                 styles.check,
@@ -262,7 +250,7 @@ function ExerciseBlock({
                   : { borderColor: colors.borderStrong },
               ]}
             >
-              {s.done ? <Ionicons name="checkmark" size={16} color={colors.white} /> : null}
+              {s.done ? <Ionicons name="checkmark" size={18} color={colors.white} /> : null}
             </View>
           </Pressable>
         </View>
@@ -358,24 +346,27 @@ const styles = StyleSheet.create({
   exTarget: { color: colors.textMuted, fontSize: font.tiny, fontWeight: '700' },
   colHead: { flexDirection: 'row', alignItems: 'center', paddingBottom: 4, gap: spacing.sm },
   colLabel: { color: colors.textFaint, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
-  colSet: { width: 26, textAlign: 'center' },
-  colField: { flex: 1, textAlign: 'center' },
-  colCheck: { width: 40, alignItems: 'center' },
-  setRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 6 },
-  setNum: { width: 26, textAlign: 'center', color: colors.textMuted, fontSize: font.body, fontWeight: '800' },
-  input: {
+  colSet: { width: 28, textAlign: 'center' },
+  colReps: { width: 96, textAlign: 'center' },
+  colSpacer: { flex: 1 },
+  colCheck: { width: 44, textAlign: 'center' },
+  setRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 8 },
+  setNum: { width: 28, textAlign: 'center', color: colors.textMuted, fontSize: font.body, fontWeight: '800' },
+  repsInput: {
+    width: 96,
+    minWidth: 0,
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
-    paddingVertical: 9,
+    paddingVertical: 10,
     paddingHorizontal: 8,
     color: colors.text,
     fontSize: font.body,
     fontWeight: '700',
     textAlign: 'center',
   },
-  checkWrap: { alignItems: 'center', justifyContent: 'center' },
+  checkWrap: { width: 44, alignItems: 'center', justifyContent: 'center' },
   check: {
     width: 30,
     height: 30,

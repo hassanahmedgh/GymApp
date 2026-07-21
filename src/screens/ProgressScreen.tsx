@@ -13,6 +13,7 @@ import { useTracker } from '../state/TrackerContext';
 import { todayISO, shortDate } from '../lib/dates';
 import { colors, spacing, radius, font, tint } from '../theme';
 import { Card, SectionHeader, Divider } from '../components/ui';
+import { Calendar } from '../components/Calendar';
 import type { Measurement } from '../types';
 
 export function ProgressScreen() {
@@ -59,6 +60,10 @@ export function ProgressScreen() {
 
   return (
     <View>
+      {/* Activity calendar */}
+      <SectionHeader title="Activity" />
+      <Calendar />
+
       {/* Metric summary */}
       <View style={styles.metrics}>
         <MetricCard

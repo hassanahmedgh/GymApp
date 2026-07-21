@@ -79,12 +79,12 @@ export const SPLIT: SplitDay[] = [
     name: 'Monday',
     split: 'Push',
     focus: 'Chest · Shoulders · Triceps',
-    lifts: [
-      'Bench Press — 4×6–8',
-      'Overhead Press — 3×8',
-      'Incline DB Press — 3×10',
-      'Lateral Raises — 3×15',
-      'Triceps Pushdown — 3×12',
+    exercises: [
+      { id: 'mon-bench', name: 'Bench Press', targetSets: 4, targetReps: '6–8' },
+      { id: 'mon-ohp', name: 'Overhead Press', targetSets: 3, targetReps: '8' },
+      { id: 'mon-incdb', name: 'Incline DB Press', targetSets: 3, targetReps: '10' },
+      { id: 'mon-lat', name: 'Lateral Raises', targetSets: 3, targetReps: '15' },
+      { id: 'mon-tri', name: 'Triceps Pushdown', targetSets: 3, targetReps: '12' },
     ],
   },
   {
@@ -92,12 +92,12 @@ export const SPLIT: SplitDay[] = [
     name: 'Tuesday',
     split: 'Pull',
     focus: 'Back · Biceps · Rear Delts',
-    lifts: [
-      'Deadlift — 3×5',
-      'Pull-Ups — 3×AMRAP',
-      'Lat Pulldown — 3×10',
-      'Face Pulls — 3×15',
-      'Barbell Curl — 3×12',
+    exercises: [
+      { id: 'tue-dead', name: 'Deadlift', targetSets: 3, targetReps: '5' },
+      { id: 'tue-pull', name: 'Pull-Ups', targetSets: 3, targetReps: 'AMRAP' },
+      { id: 'tue-lat', name: 'Lat Pulldown', targetSets: 3, targetReps: '10' },
+      { id: 'tue-face', name: 'Face Pulls', targetSets: 3, targetReps: '15' },
+      { id: 'tue-curl', name: 'Barbell Curl', targetSets: 3, targetReps: '12' },
     ],
   },
   {
@@ -105,12 +105,12 @@ export const SPLIT: SplitDay[] = [
     name: 'Wednesday',
     split: 'Legs',
     focus: 'Quads · Hamstrings · Glutes · Calves',
-    lifts: [
-      'Back Squat — 4×6–8',
-      'Romanian Deadlift — 3×10',
-      'Leg Press — 3×12',
-      'Leg Curl — 3×12',
-      'Calf Raise — 4×15',
+    exercises: [
+      { id: 'wed-squat', name: 'Back Squat', targetSets: 4, targetReps: '6–8' },
+      { id: 'wed-rdl', name: 'Romanian Deadlift', targetSets: 3, targetReps: '10' },
+      { id: 'wed-press', name: 'Leg Press', targetSets: 3, targetReps: '12' },
+      { id: 'wed-curl', name: 'Leg Curl', targetSets: 3, targetReps: '12' },
+      { id: 'wed-calf', name: 'Calf Raise', targetSets: 4, targetReps: '15' },
     ],
   },
   {
@@ -118,12 +118,12 @@ export const SPLIT: SplitDay[] = [
     name: 'Thursday',
     split: 'Push',
     focus: 'Chest · Shoulders · Triceps',
-    lifts: [
-      'Incline Bench Press — 4×8',
-      'Seated DB Press — 3×10',
-      'Cable Fly — 3×15',
-      'Lateral Raises — 3×15',
-      'Overhead Extension — 3×12',
+    exercises: [
+      { id: 'thu-inc', name: 'Incline Bench Press', targetSets: 4, targetReps: '8' },
+      { id: 'thu-db', name: 'Seated DB Press', targetSets: 3, targetReps: '10' },
+      { id: 'thu-fly', name: 'Cable Fly', targetSets: 3, targetReps: '15' },
+      { id: 'thu-lat', name: 'Lateral Raises', targetSets: 3, targetReps: '15' },
+      { id: 'thu-ext', name: 'Overhead Extension', targetSets: 3, targetReps: '12' },
     ],
   },
   {
@@ -131,12 +131,12 @@ export const SPLIT: SplitDay[] = [
     name: 'Friday',
     split: 'Pull',
     focus: 'Back · Biceps · Rear Delts',
-    lifts: [
-      'Barbell Row — 4×8',
-      'Chin-Ups — 3×AMRAP',
-      'Seated Cable Row — 3×10',
-      'Reverse Fly — 3×15',
-      'Hammer Curl — 3×12',
+    exercises: [
+      { id: 'fri-row', name: 'Barbell Row', targetSets: 4, targetReps: '8' },
+      { id: 'fri-chin', name: 'Chin-Ups', targetSets: 3, targetReps: 'AMRAP' },
+      { id: 'fri-cable', name: 'Seated Cable Row', targetSets: 3, targetReps: '10' },
+      { id: 'fri-rear', name: 'Reverse Fly', targetSets: 3, targetReps: '15' },
+      { id: 'fri-ham', name: 'Hammer Curl', targetSets: 3, targetReps: '12' },
     ],
   },
   {
@@ -144,12 +144,12 @@ export const SPLIT: SplitDay[] = [
     name: 'Saturday',
     split: 'Legs',
     focus: 'Quads · Hamstrings · Glutes · Calves',
-    lifts: [
-      'Front Squat — 4×8',
-      'Hip Thrust — 3×10',
-      'Walking Lunges — 3×12',
-      'Leg Extension — 3×15',
-      'Seated Calf Raise — 4×15',
+    exercises: [
+      { id: 'sat-front', name: 'Front Squat', targetSets: 4, targetReps: '8' },
+      { id: 'sat-hip', name: 'Hip Thrust', targetSets: 3, targetReps: '10' },
+      { id: 'sat-lunge', name: 'Walking Lunges', targetSets: 3, targetReps: '12' },
+      { id: 'sat-ext', name: 'Leg Extension', targetSets: 3, targetReps: '15' },
+      { id: 'sat-calf', name: 'Seated Calf Raise', targetSets: 4, targetReps: '15' },
     ],
   },
   {
@@ -157,12 +157,16 @@ export const SPLIT: SplitDay[] = [
     name: 'Sunday',
     split: 'Rest',
     focus: 'Active Recovery',
-    lifts: [
+    exercises: [],
+    notes: [
       'Full rest or 30–45 min light walk',
       'Full-body stretching / mobility',
       'Prep & weigh meals for the week',
     ],
   },
 ];
+
+export const DEFAULT_REST_SECONDS = 90;
+export const MIN_SETS = 2;
 
 export const GLASS_ML = 250; // one glass of water

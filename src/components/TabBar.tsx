@@ -3,12 +3,13 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, font, spacing } from '../theme';
 
-export type TabKey = 'today' | 'workout' | 'progress';
+export type TabKey = 'today' | 'workout' | 'progress' | 'settings';
 
 const TABS: { key: TabKey; label: string; icon: string; iconActive: string }[] = [
   { key: 'today', label: 'Today', icon: 'checkbox-outline', iconActive: 'checkbox' },
   { key: 'workout', label: 'Workout', icon: 'barbell-outline', iconActive: 'barbell' },
   { key: 'progress', label: 'Progress', icon: 'trending-up-outline', iconActive: 'trending-up' },
+  { key: 'settings', label: 'Settings', icon: 'settings-outline', iconActive: 'settings' },
 ];
 
 export function TabBar({

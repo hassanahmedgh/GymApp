@@ -1,37 +1,13 @@
-// Thin wrapper over Firestore for syncing the single state blob to users/{uid}.
+// Thin wrapper over Firestore for syncing the state blob to users/{uid}.
 // Every function is a no-op when Firebase is disabled or unreachable.
 
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import {
-  auth,
-  db,
-  enabled,
-  signInAnonymously,
-  onAuthStateChanged,
-} from './firebase';
+import { db, enabled, auth } from './firebase';
 import { normalize } from './storage';
 import type { TrackerState } from '../types';
 
 export function cloudEnabled(): boolean {
   return enabled && !!auth && !!db;
-}
-
-// Resolve (or create) a stable anonymous user id. Returns an unsubscribe fn.
-export function ensureAuth(onUid: (uid: string | null) => void): () => void {
-  if (!cloudEnabled()) {
-    onUid(null);
-    return () => {};
-  }
-  return onAuthStateChanged(auth!, (user) => {
-    if (user) {
-      onUid(user.uid);
-    } else {
-      signInAnonymously(auth!).catch((e) => {
-        console.warn('[cloud] anonymous sign-in failed', e);
-        onUid(null);
-      });
-    }
-  });
 }
 
 // Live-subscribe to the remote document. Returns an unsubscribe fn.

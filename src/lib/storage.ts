@@ -1,7 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_STATE, type TrackerState } from '../types';
 
-const KEY = 'tracker:v1';
+// Local cache is namespaced per user id so multiple accounts can share a device.
+function keyFor(uid: string): string {
+  return `tracker:v2:${uid}`;
+}
 
 // Merge a partial/older blob onto defaults so new fields never come back undefined.
 export function normalize(raw: Partial<TrackerState> | null | undefined): TrackerState {
@@ -11,17 +14,18 @@ export function normalize(raw: Partial<TrackerState> | null | undefined): Tracke
     ...raw,
     dayChecks: raw.dayChecks ?? {},
     water: raw.water ?? {},
-    workout: raw.workout ?? {},
+    workoutLog: raw.workoutLog ?? {},
     measurements: Array.isArray(raw.measurements) ? raw.measurements : [],
     units: { ...DEFAULT_STATE.units, ...(raw.units ?? {}) },
     waterGoalMl: raw.waterGoalMl ?? DEFAULT_STATE.waterGoalMl,
+    restSeconds: raw.restSeconds ?? DEFAULT_STATE.restSeconds,
     updatedAt: raw.updatedAt ?? 0,
   };
 }
 
-export async function loadLocal(): Promise<TrackerState> {
+export async function loadLocal(uid: string): Promise<TrackerState> {
   try {
-    const json = await AsyncStorage.getItem(KEY);
+    const json = await AsyncStorage.getItem(keyFor(uid));
     return normalize(json ? JSON.parse(json) : null);
   } catch (e) {
     console.warn('[storage] load failed', e);
@@ -29,9 +33,9 @@ export async function loadLocal(): Promise<TrackerState> {
   }
 }
 
-export async function saveLocal(state: TrackerState): Promise<void> {
+export async function saveLocal(uid: string, state: TrackerState): Promise<void> {
   try {
-    await AsyncStorage.setItem(KEY, JSON.stringify(state));
+    await AsyncStorage.setItem(keyFor(uid), JSON.stringify(state));
   } catch (e) {
     console.warn('[storage] save failed', e);
   }

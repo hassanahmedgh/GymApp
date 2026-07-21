@@ -1,30 +1,61 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTracker } from '../state/TrackerContext';
+import { useRestTimer } from '../state/RestTimerContext';
 import { SPLIT } from '../data';
-import { weekDates, todayISO, mondayIndex, shortDate } from '../lib/dates';
+import { readSets } from '../lib/sets';
+import { weekDates, todayISO, mondayIndex } from '../lib/dates';
 import { colors, spacing, radius, font, tint, splitColor } from '../theme';
 import { Card, SectionHeader, ProgressBar, Badge } from '../components/ui';
+import type { Exercise, TrackerState } from '../types';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+// Count done/total sets across a day's exercises.
+function dayTally(log: TrackerState['workoutLog'], date: string, exercises: Exercise[]) {
+  let done = 0;
+  let total = 0;
+  for (const ex of exercises) {
+    const sets = readSets(log, date, ex.id, ex.targetSets);
+    total += sets.length;
+    done += sets.filter((s) => s.done).length;
+  }
+  return { done, total };
+}
+
 export function WorkoutScreen() {
-  const { state, toggleWorkout } = useTracker();
+  const { state } = useTracker();
   const week = useMemo(() => weekDates(), []);
   const today = todayISO();
   const todayIdx = mondayIndex(new Date());
   const [open, setOpen] = useState<number>(todayIdx);
 
-  const trained = SPLIT.reduce((n, d) => {
-    if (d.split === 'Rest') return n;
-    return state.workout[week[d.weekday]] ? n + 1 : n;
-  }, 0);
-  const totalTraining = SPLIT.filter((d) => d.split !== 'Rest').length;
+  // Weekly set totals across training days.
+  const weekTally = useMemo(() => {
+    let done = 0;
+    let total = 0;
+    for (const d of SPLIT) {
+      if (!d.exercises.length) continue;
+      const t = dayTally(state.workoutLog, week[d.weekday], d.exercises);
+      done += t.done;
+      total += t.total;
+    }
+    return { done, total };
+  }, [state.workoutLog, week]);
 
-  function toggle(idx: number) {
+  function toggleOpen(idx: number) {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setOpen((cur) => (cur === idx ? -1 : idx));
   }
@@ -36,22 +67,28 @@ export function WorkoutScreen() {
         <View style={styles.summaryHead}>
           <View>
             <Text style={styles.summaryTitle}>This week</Text>
-            <Text style={styles.summarySub}>Push · Pull · Legs split</Text>
+            <Text style={styles.summarySub}>Push · Pull · Legs · sets completed</Text>
           </View>
           <View style={styles.summaryCount}>
             <Text style={styles.summaryCountValue}>
-              {trained}
-              <Text style={styles.summaryCountTotal}>/{totalTraining}</Text>
+              {weekTally.done}
+              <Text style={styles.summaryCountTotal}>/{weekTally.total}</Text>
             </Text>
-            <Text style={styles.summaryCountLabel}>sessions</Text>
+            <Text style={styles.summaryCountLabel}>sets</Text>
           </View>
         </View>
-        <ProgressBar value={trained / totalTraining} color={colors.gym} height={10} />
+        <ProgressBar
+          value={weekTally.total ? weekTally.done / weekTally.total : 0}
+          color={colors.gym}
+          height={10}
+        />
         <View style={styles.dots}>
           {SPLIT.map((d) => {
             const iso = week[d.weekday];
-            const isDone = !!state.workout[iso];
-            const isRest = d.split === 'Rest';
+            const isRest = !d.exercises.length;
+            const t = isRest ? { done: 0, total: 0 } : dayTally(state.workoutLog, iso, d.exercises);
+            const ratio = t.total ? t.done / t.total : 0;
+            const full = ratio >= 1;
             return (
               <View key={d.weekday} style={styles.dotCol}>
                 <View
@@ -59,15 +96,15 @@ export function WorkoutScreen() {
                     styles.dot,
                     isRest
                       ? { backgroundColor: colors.surfaceAlt, borderColor: colors.border }
-                      : isDone
+                      : full
                       ? { backgroundColor: splitColor[d.split], borderColor: splitColor[d.split] }
+                      : ratio > 0
+                      ? { backgroundColor: tint(splitColor[d.split], 0.35), borderColor: splitColor[d.split] }
                       : { backgroundColor: 'transparent', borderColor: colors.borderStrong },
                     iso === today && styles.dotToday,
                   ]}
                 >
-                  {isDone && !isRest ? (
-                    <Ionicons name="checkmark" size={12} color={colors.white} />
-                  ) : null}
+                  {full && !isRest ? <Ionicons name="checkmark" size={12} color={colors.white} /> : null}
                 </View>
                 <Text style={styles.dotLabel}>{d.name.slice(0, 1)}</Text>
               </View>
@@ -76,82 +113,180 @@ export function WorkoutScreen() {
         </View>
       </Card>
 
-      {/* Day cards */}
       <SectionHeader title="Weekly split" />
-      {SPLIT.map((d) => {
-        const iso = week[d.weekday];
-        const isDone = !!state.workout[iso];
-        const isRest = d.split === 'Rest';
-        const accent = splitColor[d.split];
-        const isOpen = open === d.weekday;
-        const isToday = iso === today;
+      {SPLIT.map((d) => (
+        <DayCard
+          key={d.weekday}
+          weekday={d.weekday}
+          date={week[d.weekday]}
+          isToday={week[d.weekday] === today}
+          open={open === d.weekday}
+          onToggle={() => toggleOpen(d.weekday)}
+        />
+      ))}
+    </View>
+  );
+}
 
-        return (
-          <Card key={d.weekday} style={[styles.dayCard, isToday && { borderColor: tint(accent, 0.6) }]}>
-            <Pressable onPress={() => toggle(d.weekday)} style={styles.dayHead}>
-              <View style={[styles.dayAccent, { backgroundColor: accent }]} />
-              <View style={styles.dayInfo}>
-                <View style={styles.dayTitleRow}>
-                  <Text style={styles.dayName}>{d.name}</Text>
-                  {isToday ? <Badge label="Today" color={colors.primary} /> : null}
+// ---- A single day card ------------------------------------------------------
+function DayCard({
+  weekday,
+  date,
+  isToday,
+  open,
+  onToggle,
+}: {
+  weekday: number;
+  date: string;
+  isToday: boolean;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const { state } = useTracker();
+  const day = SPLIT[weekday];
+  const accent = splitColor[day.split];
+  const isRest = !day.exercises.length;
+  const t = isRest ? { done: 0, total: 0 } : dayTally(state.workoutLog, date, day.exercises);
+
+  return (
+    <Card style={[styles.dayCard, isToday && { borderColor: tint(accent, 0.6) }]}>
+      <Pressable onPress={onToggle} style={styles.dayHead}>
+        <View style={[styles.dayAccent, { backgroundColor: accent }]} />
+        <View style={styles.dayInfo}>
+          <View style={styles.dayTitleRow}>
+            <Text style={styles.dayName}>{day.name}</Text>
+            {isToday ? <Badge label="Today" color={colors.primary} /> : null}
+          </View>
+          <View style={styles.daySplitRow}>
+            <Badge label={day.split} color={accent} solid />
+            <Text style={styles.dayFocus}>{day.focus}</Text>
+          </View>
+        </View>
+        {!isRest ? (
+          <Text style={[styles.dayTally, t.done >= t.total && t.total > 0 && { color: colors.success }]}>
+            {t.done}/{t.total}
+          </Text>
+        ) : null}
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
+      </Pressable>
+
+      {open ? (
+        <View style={styles.dayBody}>
+          {isRest ? (
+            <View>
+              {(day.notes ?? []).map((n, i) => (
+                <View key={i} style={styles.noteRow}>
+                  <Ionicons name="leaf-outline" size={15} color={colors.rest} />
+                  <Text style={styles.noteText}>{n}</Text>
                 </View>
-                <View style={styles.daySplitRow}>
-                  <Badge label={d.split} color={accent} solid />
-                  <Text style={styles.dayFocus}>{d.focus}</Text>
-                </View>
-              </View>
-              <Ionicons
-                name={isOpen ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={colors.textMuted}
-              />
-            </Pressable>
+              ))}
+            </View>
+          ) : (
+            day.exercises.map((ex) => (
+              <ExerciseBlock key={ex.id} date={date} exercise={ex} accent={accent} />
+            ))
+          )}
+        </View>
+      ) : null}
+    </Card>
+  );
+}
 
-            {isOpen ? (
-              <View style={styles.dayBody}>
-                {d.lifts.map((lift, i) => (
-                  <View key={i} style={styles.liftRow}>
-                    <View style={[styles.liftDot, { backgroundColor: accent }]} />
-                    <Text style={styles.liftText}>{lift}</Text>
-                  </View>
-                ))}
+// ---- One exercise with its sets --------------------------------------------
+function ExerciseBlock({
+  date,
+  exercise,
+  accent,
+}: {
+  date: string;
+  exercise: Exercise;
+  accent: string;
+}) {
+  const { state, toggleSet, setSetReps, setSetWeight, addSet, removeSet } = useTracker();
+  const { start } = useRestTimer();
+  const sets = readSets(state.workoutLog, date, exercise.id, exercise.targetSets);
+  const doneCount = sets.filter((s) => s.done).length;
+  const unit = state.units.weight;
 
-                {!isRest ? (
-                  <Pressable
-                    onPress={() => toggleWorkout(iso)}
-                    style={({ pressed }) => [
-                      styles.doneBtn,
-                      isDone
-                        ? { backgroundColor: tint(colors.success, 0.16), borderColor: colors.success }
-                        : { backgroundColor: accent, borderColor: accent },
-                      pressed && { opacity: 0.75 },
-                    ]}
-                  >
-                    <Ionicons
-                      name={isDone ? 'checkmark-circle' : 'barbell-outline'}
-                      size={18}
-                      color={isDone ? colors.success : colors.white}
-                    />
-                    <Text
-                      style={[
-                        styles.doneBtnText,
-                        { color: isDone ? colors.success : colors.white },
-                      ]}
-                    >
-                      {isDone ? `Completed · ${shortDate(iso)}` : 'Mark as done'}
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <View style={styles.restNote}>
-                    <Ionicons name="bed-outline" size={16} color={colors.textMuted} />
-                    <Text style={styles.restNoteText}>Recovery day — no session to log.</Text>
-                  </View>
-                )}
-              </View>
-            ) : null}
-          </Card>
-        );
-      })}
+  function onToggle(index: number, currentlyDone: boolean) {
+    toggleSet(date, exercise.id, index, exercise.targetSets);
+    if (!currentlyDone) start(); // starting a rest only when completing a set
+  }
+
+  return (
+    <View style={styles.exercise}>
+      <View style={styles.exHead}>
+        <Text style={styles.exName}>{exercise.name}</Text>
+        <Text style={styles.exTarget}>
+          {exercise.targetSets}×{exercise.targetReps} · {doneCount}/{sets.length}
+        </Text>
+      </View>
+
+      {/* column labels */}
+      <View style={styles.colHead}>
+        <Text style={[styles.colLabel, styles.colSet]}>SET</Text>
+        <Text style={[styles.colLabel, styles.colField]}>REPS</Text>
+        <Text style={[styles.colLabel, styles.colField]}>{unit.toUpperCase()}</Text>
+        <Text style={[styles.colLabel, styles.colCheck]}>✓</Text>
+      </View>
+
+      {sets.map((s, i) => (
+        <View key={i} style={styles.setRow}>
+          <Text style={[styles.setNum, s.done && { color: accent }]}>{i + 1}</Text>
+          <TextInput
+            value={s.reps}
+            onChangeText={(v) => setSetReps(date, exercise.id, i, v, exercise.targetSets)}
+            placeholder={exercise.targetReps}
+            placeholderTextColor={colors.textFaint}
+            keyboardType="number-pad"
+            style={[styles.input, styles.colField]}
+          />
+          <TextInput
+            value={s.weight}
+            onChangeText={(v) => setSetWeight(date, exercise.id, i, v, exercise.targetSets)}
+            placeholder="—"
+            placeholderTextColor={colors.textFaint}
+            keyboardType="decimal-pad"
+            style={[styles.input, styles.colField]}
+          />
+          <Pressable
+            onPress={() => onToggle(i, s.done)}
+            style={[styles.colCheck, styles.checkWrap]}
+            hitSlop={6}
+          >
+            <View
+              style={[
+                styles.check,
+                s.done
+                  ? { backgroundColor: colors.success, borderColor: colors.success }
+                  : { borderColor: colors.borderStrong },
+              ]}
+            >
+              {s.done ? <Ionicons name="checkmark" size={16} color={colors.white} /> : null}
+            </View>
+          </Pressable>
+        </View>
+      ))}
+
+      <View style={styles.setBtns}>
+        <Pressable
+          onPress={() => addSet(date, exercise.id, exercise.targetSets)}
+          style={({ pressed }) => [styles.addSet, pressed && styles.pressed]}
+        >
+          <Ionicons name="add" size={16} color={accent} />
+          <Text style={[styles.addSetText, { color: accent }]}>Add set</Text>
+        </Pressable>
+        {sets.length > 1 ? (
+          <Pressable
+            onPress={() => removeSet(date, exercise.id, sets.length - 1, exercise.targetSets)}
+            style={({ pressed }) => [styles.removeSet, pressed && styles.pressed]}
+            hitSlop={6}
+          >
+            <Ionicons name="remove" size={16} color={colors.textMuted} />
+            <Text style={styles.removeSetText}>Remove</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -169,7 +304,12 @@ const styles = StyleSheet.create({
   summaryCount: { alignItems: 'flex-end' },
   summaryCountValue: { color: colors.gym, fontSize: font.h1, fontWeight: '800', lineHeight: 34 },
   summaryCountTotal: { color: colors.textMuted, fontSize: font.h3, fontWeight: '700' },
-  summaryCountLabel: { color: colors.textMuted, fontSize: font.tiny, fontWeight: '700', textTransform: 'uppercase' },
+  summaryCountLabel: {
+    color: colors.textMuted,
+    fontSize: font.tiny,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
   dots: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.lg },
   dotCol: { alignItems: 'center', gap: 6 },
   dot: {
@@ -191,34 +331,63 @@ const styles = StyleSheet.create({
   dayName: { color: colors.text, fontSize: font.body, fontWeight: '800' },
   daySplitRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dayFocus: { color: colors.textMuted, fontSize: font.small, flexShrink: 1 },
+  dayTally: { color: colors.textMuted, fontSize: font.body, fontWeight: '800' },
   dayBody: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
-    paddingTop: spacing.xs,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    marginTop: 2,
   },
-  liftRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 7 },
-  liftDot: { width: 6, height: 6, borderRadius: 3 },
-  liftText: { color: colors.text, fontSize: font.body, flex: 1 },
-  doneBtn: {
+
+  noteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 8, marginTop: 4 },
+  noteText: { color: colors.text, fontSize: font.body, flex: 1 },
+
+  exercise: {
+    paddingTop: spacing.lg,
+    marginTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  exHead: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  exName: { color: colors.text, fontSize: font.body, fontWeight: '800', flex: 1 },
+  exTarget: { color: colors.textMuted, fontSize: font.tiny, fontWeight: '700' },
+  colHead: { flexDirection: 'row', alignItems: 'center', paddingBottom: 4, gap: spacing.sm },
+  colLabel: { color: colors.textFaint, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  colSet: { width: 26, textAlign: 'center' },
+  colField: { flex: 1, textAlign: 'center' },
+  colCheck: { width: 40, alignItems: 'center' },
+  setRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 6 },
+  setNum: { width: 26, textAlign: 'center', color: colors.textMuted, fontSize: font.body, fontWeight: '800' },
+  input: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    color: colors.text,
+    fontSize: font.body,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  checkWrap: { alignItems: 'center', justifyContent: 'center' },
+  check: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
-    marginTop: spacing.md,
   },
-  doneBtnText: { fontSize: font.body, fontWeight: '800' },
-  restNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  restNoteText: { color: colors.textMuted, fontSize: font.small },
+  setBtns: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+  addSet: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6 },
+  addSetText: { fontSize: font.small, fontWeight: '800' },
+  removeSet: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 6 },
+  removeSetText: { color: colors.textMuted, fontSize: font.small, fontWeight: '700' },
+  pressed: { opacity: 0.6 },
 });

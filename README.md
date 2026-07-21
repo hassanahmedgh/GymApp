@@ -5,10 +5,22 @@ Local-first, works offline, and syncs to the cloud with Firebase.
 
 ## Features
 
-- **Today** — your daily 16:8 fasting & gym schedule with tap-to-complete checkboxes, a completion ring, and a water-intake tracker (goal 4 L/day).
-- **Workout** — a **Push / Pull / Legs** weekly split with exercises and per-day session tracking. Resets naturally every week.
+- **Accounts** — email/password **sign up / sign in** with **remember-me**. Your data is tied to your account and syncs across devices.
+- **Today** — your daily 16:8 fasting & gym schedule with tap-to-complete checkboxes, a completion ring, and a water-intake tracker.
+- **Workout** — a **Push / Pull / Legs** weekly split where every exercise has **per-set checkboxes** with editable reps & weight, **add / remove sets**, and progress counted by sets completed. Completing a set pops up a **rest timer** (duration set in Settings).
 - **Progress** — log your **waist** and **weight**, see the trend chart, total change since you started, and full history.
+- **Settings** — rest-timer duration, units (in/cm · kg/lb), daily water goal, and account / sign-out.
 - **Cloud sync** — data is saved on-device instantly (AsyncStorage) and synced to Firebase Firestore in the background. Lose your phone, keep your data.
+
+## Run it as a web app (PWA) on your iPhone — free, no PC
+
+The app is also published as an installable web app via **GitHub Pages**:
+
+1. Enable Pages once: repo **Settings → Pages → Source: Deploy from a branch → `main` / `/docs`**.
+2. Live at **https://hassanahmedgh.github.io/GymApp/**
+3. On iPhone **Safari** → **Share → Add to Home Screen**. Opens fullscreen, works without the PC.
+
+To rebuild & redeploy the web app after code changes: `npm run build:web`, then commit & push `docs/`.
 
 ---
 
@@ -51,11 +63,11 @@ Expo builds the iOS app **in the cloud**, so you don't need a Mac.
 
 The app already contains the Firebase web config. To turn on syncing, do this in the [Firebase Console](https://console.firebase.google.com) for project **blackstone-880ca**:
 
-1. **Authentication → Sign-in method → Anonymous → Enable.**
-   (The app signs each device in anonymously to get a stable, private user id.)
+1. **Authentication → Sign-in method → Email/Password → Enable.**
+   (Required for sign up / sign in. Without it, creating an account fails with "operation-not-allowed".)
 2. **Firestore Database → Create database** (Production mode is fine).
 3. **Firestore → Rules →** paste the contents of [`firestore.rules`](./firestore.rules) → **Publish.**
-   These rules ensure each user can only read/write their **own** data.
+   These rules ensure each signed-in user can only read/write their **own** data.
 
 If Firebase isn't configured or the phone is offline, the app still works fully — it just keeps everything on-device and syncs when it can.
 

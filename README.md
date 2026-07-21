@@ -1,6 +1,6 @@
 # 🔥 FastFit
 
-A professional **16:8 fasting + gym tracker** built with **React Native (Expo SDK 57)**.
+A professional **16:8 fasting + gym tracker** built with **React Native (Expo SDK 54)**.
 Local-first, works offline, and syncs to the cloud with Firebase.
 
 ## Features
@@ -68,7 +68,7 @@ The Firebase web API key is embedded in the app. That's expected — [Firebase w
 
 ## 🛠️ Tech
 
-- Expo SDK 57 · React Native 0.86 · React 19 · TypeScript
+- Expo SDK 54 · React Native 0.81 · React 19 · TypeScript (runs in the App Store Expo Go)
 - `@react-native-async-storage/async-storage` — local persistence
 - `firebase` (Auth + Firestore) — cloud sync
 - `react-native-svg` — progress ring & trend chart

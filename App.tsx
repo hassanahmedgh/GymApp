@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  ActivityIndicator,
+  Animated,
+  Easing,
   StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -16,6 +17,8 @@ import { AuthProvider, useAuth } from './src/state/AuthContext';
 import { TrackerProvider, useTracker } from './src/state/TrackerContext';
 import { RestTimerProvider } from './src/state/RestTimerContext';
 import { TabBar, type TabKey } from './src/components/TabBar';
+import { AnimatedSplash } from './src/components/AnimatedSplash';
+import { Reminders } from './src/components/Reminders';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { TodayScreen } from './src/screens/TodayScreen';
 import { WorkoutScreen } from './src/screens/WorkoutScreen';
@@ -33,14 +36,7 @@ const TAB_META: Record<TabKey, { title: string; subtitle: string }> = {
 };
 
 function Splash() {
-  return (
-    <View style={[styles.loading, { backgroundColor: colors.bg }]}>
-      <View style={[styles.logoMark, { backgroundColor: tint(colors.primary, 0.16) }]}>
-        <Ionicons name="flame" size={30} color={colors.primary} />
-      </View>
-      <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />
-    </View>
-  );
+  return <AnimatedSplash />;
 }
 
 function SyncChip({ status }: { status: SyncStatus }) {
@@ -67,6 +63,19 @@ function MainApp() {
   const [tab, setTab] = useState<TabKey>('today');
   const meta = TAB_META[tab];
 
+  // Fade + slide the content in whenever the tab changes (and on first mount).
+  const anim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    anim.setValue(0);
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [tab]);
+  const contentTranslate = anim.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
+
   if (!ready) return <Splash />;
 
   return (
@@ -92,12 +101,15 @@ function MainApp() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {tab === 'today' && <TodayScreen />}
-        {tab === 'workout' && <WorkoutScreen />}
-        {tab === 'progress' && <ProgressScreen />}
-        {tab === 'settings' && <SettingsScreen />}
+        <Animated.View style={{ opacity: anim, transform: [{ translateY: contentTranslate }] }}>
+          {tab === 'today' && <TodayScreen />}
+          {tab === 'workout' && <WorkoutScreen />}
+          {tab === 'progress' && <ProgressScreen />}
+          {tab === 'settings' && <SettingsScreen />}
+        </Animated.View>
       </ScrollView>
 
+      <Reminders />
       <TabBar active={tab} onChange={setTab} bottomInset={insets.bottom} />
       <StatusBar style="light" />
     </View>

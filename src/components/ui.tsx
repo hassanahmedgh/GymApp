@@ -1,9 +1,10 @@
-import React, { type ReactNode } from 'react';
+import React, { useEffect, useRef, type ReactNode } from 'react';
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
+  Animated,
   type ViewStyle,
   type StyleProp,
   type TextStyle,
@@ -79,16 +80,14 @@ export function ProgressBar({
   track?: string;
 }) {
   const pct = Math.max(0, Math.min(1, value));
+  const anim = useRef(new Animated.Value(pct)).current;
+  useEffect(() => {
+    Animated.timing(anim, { toValue: pct, duration: 500, useNativeDriver: false }).start();
+  }, [pct]);
+  const width = anim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
   return (
     <View style={[styles.barTrack, { height, backgroundColor: track }]}>
-      <View
-        style={{
-          width: `${pct * 100}%`,
-          height,
-          borderRadius: height,
-          backgroundColor: color,
-        }}
-      />
+      <Animated.View style={{ width, height, borderRadius: height, backgroundColor: color }} />
     </View>
   );
 }

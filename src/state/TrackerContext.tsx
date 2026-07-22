@@ -42,6 +42,7 @@ interface TrackerContextValue {
   setUnits: (partial: Partial<Units>) => void;
   setRestSeconds: (seconds: number) => void;
   setWaterGoal: (ml: number) => void;
+  setNotify: (partial: { notifyWater?: boolean; notifyFast?: boolean }) => void;
 }
 
 const Ctx = createContext<TrackerContextValue | null>(null);
@@ -209,6 +210,8 @@ export function TrackerProvider({ uid, children }: { uid: string; children: Reac
 
     setWaterGoal: (ml) =>
       mutate((s) => ({ ...s, waterGoalMl: Math.max(500, Math.min(8000, Math.round(ml))) })),
+
+    setNotify: (partial) => mutate((s) => ({ ...s, ...partial })),
   }), [state, ready, sync]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

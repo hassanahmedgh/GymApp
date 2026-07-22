@@ -14,6 +14,7 @@ import { todayISO, shortDate } from '../lib/dates';
 import { colors, spacing, radius, font, tint } from '../theme';
 import { Card, SectionHeader, Divider } from '../components/ui';
 import { Calendar } from '../components/Calendar';
+import { currentStreak, bestStreak } from '../lib/streak';
 import type { Measurement } from '../types';
 
 export function ProgressScreen() {
@@ -58,8 +59,23 @@ export function ProgressScreen() {
     Keyboard.dismiss();
   }
 
+  const streak = currentStreak(state);
+  const best = bestStreak(state);
+
   return (
     <View>
+      {/* Streaks */}
+      <View style={styles.streakRow}>
+        <Card style={styles.streakCard}>
+          <Text style={styles.streakBig}>🔥 {streak}</Text>
+          <Text style={styles.streakLabel}>Day streak</Text>
+        </Card>
+        <Card style={styles.streakCard}>
+          <Text style={styles.streakBig}>🏆 {best}</Text>
+          <Text style={styles.streakLabel}>Best streak</Text>
+        </Card>
+      </View>
+
       {/* Activity calendar */}
       <SectionHeader title="Activity" />
       <Calendar />
@@ -314,6 +330,17 @@ function Sparkline({
 }
 
 const styles = StyleSheet.create({
+  streakRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
+  streakCard: { flex: 1, alignItems: 'center', paddingVertical: spacing.lg },
+  streakBig: { color: colors.text, fontSize: font.h1, fontWeight: '900' },
+  streakLabel: {
+    color: colors.textMuted,
+    fontSize: font.tiny,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 4,
+  },
   metrics: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md },
   metricCard: { flex: 1 },
   metricIcon: {

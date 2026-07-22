@@ -19,6 +19,8 @@ export function normalize(raw: Partial<TrackerState> | null | undefined): Tracke
     units: { ...DEFAULT_STATE.units, ...(raw.units ?? {}) },
     waterGoalMl: raw.waterGoalMl ?? DEFAULT_STATE.waterGoalMl,
     restSeconds: raw.restSeconds ?? DEFAULT_STATE.restSeconds,
+    notifyWater: raw.notifyWater ?? DEFAULT_STATE.notifyWater,
+    notifyFast: raw.notifyFast ?? DEFAULT_STATE.notifyFast,
     updatedAt: raw.updatedAt ?? 0,
   };
 }

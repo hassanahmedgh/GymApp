@@ -8,11 +8,19 @@ import { todayISO } from '../lib/dates';
 import { colors, spacing, radius, font, tint, categoryColor } from '../theme';
 import { Card, SectionHeader, ProgressBar } from '../components/ui';
 import { Ring } from '../components/Ring';
+import { useNow } from '../lib/useNow';
+import { fastingStatus } from '../lib/fasting';
+import { currentStreak } from '../lib/streak';
 
 export function TodayScreen() {
   const { state, toggleTask, addWater, resetWater } = useTracker();
   const { user } = useAuth();
   const today = todayISO();
+
+  const now = useNow(30000);
+  const fs = fastingStatus(now);
+  const fastAccent = fs.eating ? colors.meal1 : colors.fasting;
+  const streak = currentStreak(state);
 
   const name = useMemo(() => {
     const raw = (user?.displayName || user?.email?.split('@')[0] || 'Athlete').split(' ')[0];
@@ -37,10 +45,42 @@ export function TodayScreen() {
   return (
     <View>
       {/* Welcome */}
-      <View style={styles.welcome}>
-        <Text style={styles.welcomeHi}>Welcome back,</Text>
-        <Text style={styles.welcomeName}>{name} 👋</Text>
+      <View style={styles.welcomeRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.welcomeHi}>Welcome back,</Text>
+          <Text style={styles.welcomeName}>{name} 👋</Text>
+        </View>
+        {streak > 0 ? (
+          <View style={styles.streakChip}>
+            <Text style={styles.streakEmoji}>🔥</Text>
+            <Text style={styles.streakText}>{streak}</Text>
+          </View>
+        ) : null}
       </View>
+
+      {/* Fasting window */}
+      <Card style={styles.fastCard}>
+        <View style={styles.fastTop}>
+          <View style={[styles.fastIcon, { backgroundColor: tint(fastAccent, 0.16) }]}>
+            <Ionicons name={fs.eating ? 'restaurant' : 'moon'} size={18} color={fastAccent} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.fastLabel}>{fs.label}</Text>
+            <Text style={styles.fastCaption}>
+              <Text style={{ color: colors.text, fontWeight: '800' }}>
+                {fs.hh}h {fs.mm}m
+              </Text>{' '}
+              {fs.caption}
+            </Text>
+          </View>
+          <View style={[styles.fastBadge, { backgroundColor: tint(fastAccent, 0.16) }]}>
+            <Text style={[styles.fastBadgeText, { color: fastAccent }]}>16:8</Text>
+          </View>
+        </View>
+        <View style={styles.fastBar}>
+          <ProgressBar value={fs.progress} color={fastAccent} height={8} />
+        </View>
+      </Card>
 
       {/* Daily completion summary */}
       <Card style={styles.summary}>
@@ -159,9 +199,34 @@ export function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
-  welcome: { marginBottom: spacing.lg },
+  welcomeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
   welcomeHi: { color: colors.textMuted, fontSize: font.small, fontWeight: '600' },
   welcomeName: { color: colors.text, fontSize: 26, fontWeight: '900', marginTop: 2 },
+  streakChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: tint(colors.fasting, 0.16),
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.pill,
+  },
+  streakEmoji: { fontSize: 16 },
+  streakText: { color: colors.fasting, fontSize: font.h3, fontWeight: '900' },
+  fastCard: { marginBottom: spacing.md },
+  fastTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  fastIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fastLabel: { color: colors.text, fontSize: font.body, fontWeight: '800' },
+  fastCaption: { color: colors.textMuted, fontSize: font.small, marginTop: 1 },
+  fastBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.pill },
+  fastBadgeText: { fontSize: font.tiny, fontWeight: '900' },
+  fastBar: { marginTop: spacing.md },
 
   summary: {
     flexDirection: 'row',

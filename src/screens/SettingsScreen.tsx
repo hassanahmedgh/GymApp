@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, Switch, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTracker } from '../state/TrackerContext';
 import { useAuth } from '../state/AuthContext';
 import { colors, spacing, radius, font, tint } from '../theme';
 import { Card, SectionHeader, Divider } from '../components/ui';
+import { requestNotif, notifPermission } from '../lib/notify';
 
 const REST_PRESETS = [60, 90, 120, 180];
 
@@ -16,10 +17,18 @@ function fmtRest(sec: number): string {
 }
 
 export function SettingsScreen() {
-  const { state, setRestSeconds, setUnits, setWaterGoal } = useTracker();
+  const { state, setRestSeconds, setUnits, setWaterGoal, setNotify } = useTracker();
   const { user, logout } = useAuth();
   const rest = state.restSeconds;
   const goalL = (state.waterGoalMl / 1000).toFixed(1);
+
+  const [perm, setPerm] = useState<string>('default');
+  useEffect(() => setPerm(notifPermission()), []);
+  async function enableNotifs() {
+    const ok = await requestNotif();
+    setPerm(notifPermission());
+    if (ok) setNotify({ notifyWater: true, notifyFast: true });
+  }
 
   return (
     <View>
@@ -106,6 +115,55 @@ export function SettingsScreen() {
           >
             <Ionicons name="add" size={22} color={colors.text} />
           </Pressable>
+        </View>
+      </Card>
+
+      {/* Notifications */}
+      <Card style={styles.card}>
+        <SectionHeader title="Notifications" />
+        <Text style={styles.help}>Reminders fire while FastFit is open on your phone.</Text>
+        {perm === 'granted' ? (
+          <View style={styles.permOk}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+            <Text style={styles.permOkText}>Notifications enabled</Text>
+          </View>
+        ) : (
+          <Pressable
+            onPress={enableNotifs}
+            style={({ pressed }) => [styles.enableBtn, pressed && styles.pressed]}
+          >
+            <Ionicons name="notifications-outline" size={18} color={colors.white} />
+            <Text style={styles.enableText}>
+              {perm === 'denied'
+                ? 'Blocked — enable in browser settings'
+                : 'Enable notifications'}
+            </Text>
+          </Pressable>
+        )}
+        <View style={styles.toggleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleLabel}>Water reminder</Text>
+            <Text style={styles.toggleSub}>Every 45 min · 9 AM–9 PM</Text>
+          </View>
+          <Switch
+            value={state.notifyWater}
+            onValueChange={(v) => setNotify({ notifyWater: v })}
+            trackColor={{ true: colors.primary, false: colors.surfaceAlt }}
+            thumbColor={colors.white}
+          />
+        </View>
+        <Divider style={{ marginVertical: spacing.sm }} />
+        <View style={styles.toggleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleLabel}>Fasting window alerts</Text>
+            <Text style={styles.toggleSub}>Opens 1 PM · fast begins 9 PM</Text>
+          </View>
+          <Switch
+            value={state.notifyFast}
+            onValueChange={(v) => setNotify({ notifyFast: v })}
+            trackColor={{ true: colors.primary, false: colors.surfaceAlt }}
+            thumbColor={colors.white}
+          />
         </View>
       </Card>
 
@@ -229,5 +287,21 @@ const styles = StyleSheet.create({
   },
   signOutText: { color: colors.danger, fontSize: font.body, fontWeight: '800' },
   footer: { color: colors.textFaint, fontSize: font.tiny, textAlign: 'center', marginTop: spacing.sm },
+  enableBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    paddingVertical: 12,
+    marginBottom: spacing.md,
+  },
+  enableText: { color: colors.white, fontSize: font.small, fontWeight: '800' },
+  permOk: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md },
+  permOkText: { color: colors.success, fontSize: font.body, fontWeight: '700' },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
+  toggleLabel: { color: colors.text, fontSize: font.body, fontWeight: '700' },
+  toggleSub: { color: colors.textMuted, fontSize: font.tiny, marginTop: 2 },
   pressed: { opacity: 0.6 },
 });

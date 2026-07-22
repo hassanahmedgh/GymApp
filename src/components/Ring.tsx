@@ -1,9 +1,11 @@
-import React, { type ReactNode } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, type ReactNode } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { colors } from '../theme';
 
-// A circular progress ring with arbitrary center content.
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// A circular progress ring whose arc animates to `progress`.
 export function Ring({
   progress,
   size = 132,
@@ -22,7 +24,20 @@ export function Ring({
   const pct = Math.max(0, Math.min(1, progress));
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;
-  const dash = circumference * pct;
+
+  const anim = useRef(new Animated.Value(pct)).current;
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: pct,
+      duration: 600,
+      useNativeDriver: false,
+    }).start();
+  }, [pct]);
+
+  const strokeDashoffset = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [circumference, 0],
+  });
 
   return (
     <View style={{ width: size, height: size }}>
@@ -35,7 +50,7 @@ export function Ring({
           strokeWidth={stroke}
           fill="none"
         />
-        <Circle
+        <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
           r={r}
@@ -43,8 +58,8 @@ export function Ring({
           strokeWidth={stroke}
           fill="none"
           strokeLinecap="round"
-          strokeDasharray={`${dash} ${circumference - dash}`}
-          // Start the arc at 12 o'clock.
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>

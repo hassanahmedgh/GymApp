@@ -61,6 +61,8 @@ export interface TrackerState {
   units: Units;
   waterGoalMl: number;
   restSeconds: number;
+  notifyWater: boolean;
+  notifyFast: boolean;
   updatedAt: number;
 }
 
@@ -72,6 +74,8 @@ export const DEFAULT_STATE: TrackerState = {
   units: { waist: 'in', weight: 'kg' },
   waterGoalMl: 4000,
   restSeconds: 90,
+  notifyWater: true,
+  notifyFast: true,
   updatedAt: 0,
 };
 
